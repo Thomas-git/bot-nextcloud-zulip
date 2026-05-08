@@ -1,11 +1,3 @@
-"""
-Constructeurs de messages interactifs Zulip (widget_content type "zform").
-
-Un zform de type "choices" affiche une liste de boutons cliquables.
-Quand l'utilisateur clique, Zulip renvoie un message avec le texte `reply`
-associé au choix — le bot le traite comme une commande interne.
-"""
-
 import json
 from typing import Any
 
@@ -13,10 +5,6 @@ from src.nextcloud.client import NextcloudFile
 
 
 def recent_files_form(files: list[NextcloudFile], days: int) -> dict[str, Any]:
-    """
-    Construit un message Zulip avec widget_content zform pour la liste
-    des fichiers récents.  Retourne un dict prêt à passer à send_message().
-    """
     if not files:
         return {
             "content": f"Aucun fichier modifié ces {days} derniers jours.",
@@ -25,9 +13,9 @@ def recent_files_form(files: list[NextcloudFile], days: int) -> dict[str, Any]:
 
     choices = [
         {
+            "type": "multiple_choice",
             "short_name": str(i),
             "long_name": _format_label(f),
-            # La commande renvoyée au bot quand l'utilisateur clique
             "reply": f"link_file:{f.path}",
         }
         for i, f in enumerate(files)
@@ -50,22 +38,31 @@ def recent_files_form(files: list[NextcloudFile], days: int) -> dict[str, Any]:
     }
 
 
+def recent_files_text(files: list[NextcloudFile], days: int) -> str:
+    """Fallback texte pour les DMs (les widgets ne s'y affichent pas)."""
+    if not files:
+        return f"Aucun fichier modifié ces {days} derniers jours."
+    lines = [f"**{len(files)} fichier(s) récent(s)** (ces {days} derniers jours) :\n"]
+    for f in files:
+        date_str = f.modified.strftime("%d/%m %H:%M") if f.modified else "?"
+        lines.append(f"- [{f.name}]({f.open_link}) — {date_str}, {_human_size(f.size)}")
+    return "\n".join(lines)
+
+
 def file_link_message(file: NextcloudFile) -> str:
     """Texte Markdown posté dans la conversation quand un fichier est sélectionné."""
-    size_str = _human_size(file.size)
     date_str = file.modified.strftime("%d/%m/%Y %H:%M") if file.modified else "?"
     return (
-        f"**Fichier lié :** [{file.name}]({file.internal_link})  \n"
-        f"Modifié le {date_str} · {size_str}"
+        f"**Fichier lié :** [{file.name}]({file.open_link})  \n"
+        f"Modifié le {date_str} · {_human_size(file.size)}"
     )
 
 
-# ── helpers ──────────────────────────────────────────────────────────────────
+# ── helpers ───────────────────────────────────────────────────────────────────
 
 def _format_label(f: NextcloudFile) -> str:
     date_str = f.modified.strftime("%d/%m %H:%M") if f.modified else "?"
-    size_str = _human_size(f.size)
-    return f"{f.name}  ({date_str}, {size_str})"
+    return f"{f.name}  ({date_str}, {_human_size(f.size)})"
 
 
 def _human_size(size: int) -> str:

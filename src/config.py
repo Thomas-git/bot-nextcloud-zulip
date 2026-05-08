@@ -24,5 +24,3 @@ WEBHOOK_PORT = int(os.getenv("WEBHOOK_PORT", "5000"))
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "")
 
 RECENT_DAYS = int(os.getenv("RECENT_DAYS", "7"))
-
-COMMAND_PREFIX = "/nextcloud"
