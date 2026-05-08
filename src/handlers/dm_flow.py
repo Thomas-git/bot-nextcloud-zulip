@@ -20,10 +20,11 @@ _sessions: dict[str, "DMSession"] = {}
 @dataclass
 class DMSession:
     origin_type: str
-    origin_stream_id: int | None   # ID numérique du canal (pour l'URL)
-    origin_to: Any                 # stream name (str) ou liste d'emails
+    origin_stream_id: int | None
+    origin_to: Any
     origin_topic: str
     origin_message_id: int
+    origin_user_name: str
     files: list[NextcloudFile]
     days: int
     selected: list[int] = field(default_factory=list)
@@ -61,6 +62,7 @@ def start(
         ),
         origin_topic=trigger.get("subject", ""),
         origin_message_id=trigger["id"],
+        origin_user_name=trigger.get("sender_full_name", user_email),
         files=files,
         days=days,
     )
@@ -104,11 +106,10 @@ def handle(message: dict[str, Any], client: zulip.Client) -> None:
 
 
 def _validate(user_email: str, session: DMSession, client: zulip.Client) -> None:
-    lines = [forms.file_link_message(session.files[i]) for i in session.selected]
-
+    selected_files = [session.files[i] for i in session.selected]
     payload: dict[str, Any] = {
         "type": session.origin_type,
-        "content": "\n\n".join(lines),
+        "content": forms.origin_message(session.origin_user_name, selected_files),
     }
     if session.origin_type == "stream":
         payload["to"] = session.origin_to

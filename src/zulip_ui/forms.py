@@ -3,6 +3,9 @@ from typing import Any
 
 from src.nextcloud.client import NextcloudFile
 
+# 26 lettres suffisent pour max_results=20
+_LABELS = [chr(65 + i) for i in range(26)]
+
 
 def recent_files_form(files: list[NextcloudFile], days: int) -> dict[str, Any]:
     if not files:
@@ -14,7 +17,7 @@ def recent_files_form(files: list[NextcloudFile], days: int) -> dict[str, Any]:
     file_choices = [
         {
             "type": "multiple_choice",
-            "short_name": str(i),
+            "short_name": _LABELS[i],
             "long_name": _format_label(f),
             "reply": f"link_file:{f.path}",
         }
@@ -32,7 +35,7 @@ def recent_files_form(files: list[NextcloudFile], days: int) -> dict[str, Any]:
             "widget_type": "zform",
             "extra_data": {
                 "type": "choices",
-                "heading": f"Fichiers Nextcloud — {days} derniers jours\nCliquez pour sélectionner, puis Valider",
+                "heading": f"Fichiers Nextcloud — {days} derniers jours",
                 "choices": file_choices + [validate_choice],
             },
         }
@@ -44,24 +47,19 @@ def recent_files_form(files: list[NextcloudFile], days: int) -> dict[str, Any]:
     }
 
 
-def recent_files_text(files: list[NextcloudFile], days: int) -> str:
-    """Fallback texte pour les DMs (les widgets ne s'y affichent pas)."""
-    if not files:
-        return f"Aucun fichier modifié ces {days} derniers jours."
-    lines = [f"**{len(files)} fichier(s) récent(s)** (ces {days} derniers jours) :\n"]
-    for f in files:
-        date_str = f.modified.strftime("%d/%m %H:%M") if f.modified else "?"
-        lines.append(f"- [{f.name}]({f.open_link}) — {date_str}, {_human_size(f.size)}")
-    return "\n".join(lines)
+def file_link(file: NextcloudFile) -> str:
+    return f"[{file.name}]({file.open_link})"
 
 
-def file_link_message(file: NextcloudFile) -> str:
-    """Texte Markdown posté dans la conversation quand un fichier est sélectionné."""
-    date_str = file.modified.strftime("%d/%m/%Y %H:%M") if file.modified else "?"
-    return (
-        f"**Fichier lié :** [{file.name}]({file.open_link})  \n"
-        f"Modifié le {date_str} · {_human_size(file.size)}"
+def origin_message(user_name: str, files: list[NextcloudFile]) -> str:
+    n = len(files)
+    header = (
+        f"**{user_name}** a lié le fichier suivant :"
+        if n == 1 else
+        f"**{user_name}** a lié les fichiers suivants :"
     )
+    links = "\n".join(f"- {file_link(f)}" for f in files)
+    return f"{header}\n{links}"
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────

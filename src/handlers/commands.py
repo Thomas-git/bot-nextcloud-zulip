@@ -41,6 +41,12 @@ def _cmd_recent(
     client: zulip.Client,
     args: list[str],
 ) -> None:
+    if message.get("type") == "private":
+        _reply(message, client,
+               "Cette commande doit être utilisée depuis un canal.\n"
+               "Mentionnez-moi dans une conversation : `@**Nextcloud Bot** recent`")
+        return
+
     days = config.RECENT_DAYS
     if args:
         days = _parse_days(" ".join(args))
