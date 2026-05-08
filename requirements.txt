@@ -1,0 +1,5 @@
+zulip>=0.9.0
+webdavclient3>=3.14.6
+flask>=3.1.0
+python-dotenv>=1.1.0
+requests>=2.32.0
