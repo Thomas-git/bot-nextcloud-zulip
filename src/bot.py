@@ -6,6 +6,7 @@ les messages en temps réel, sans nécessiter d'URL publique exposée.
 """
 
 import logging
+import re
 from typing import Any
 
 import zulip
@@ -31,7 +32,8 @@ def on_event(event: dict[str, Any], client: zulip.Client) -> None:
     if message.get("sender_email") == config.ZULIP_EMAIL:
         return
 
-    content: str = message.get("content", "").strip()
+    content: str = _strip_mention(message.get("content", "")).strip()
+    message = {**message, "content": content}
     log.debug("Message reçu de %s : %s", message.get("sender_email"), content[:80])
 
     # Interactions de zform (clics sur boutons)
@@ -48,6 +50,13 @@ def on_event(event: dict[str, Any], client: zulip.Client) -> None:
             commands.handle(message, client)
         except Exception:
             log.exception("Erreur lors du traitement de la commande")
+
+
+_MENTION_RE = re.compile(r"^@\*\*[^*]+\*\*\s*")
+
+def _strip_mention(content: str) -> str:
+    """Retire le @**Nom du bot** en début de message (messages de stream)."""
+    return _MENTION_RE.sub("", content)
 
 
 def main() -> None:

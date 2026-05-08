@@ -1,0 +1,17 @@
+pyproject.toml
+bot_nextcloud_zulip.egg-info/PKG-INFO
+bot_nextcloud_zulip.egg-info/SOURCES.txt
+bot_nextcloud_zulip.egg-info/dependency_links.txt
+bot_nextcloud_zulip.egg-info/entry_points.txt
+bot_nextcloud_zulip.egg-info/requires.txt
+bot_nextcloud_zulip.egg-info/top_level.txt
+src/__init__.py
+src/bot.py
+src/config.py
+src/handlers/__init__.py
+src/handlers/commands.py
+src/handlers/interactions.py
+src/nextcloud/__init__.py
+src/nextcloud/client.py
+src/zulip_ui/__init__.py
+src/zulip_ui/forms.py
