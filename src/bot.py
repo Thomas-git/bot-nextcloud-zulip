@@ -5,7 +5,7 @@ from typing import Any
 import zulip
 
 from src import config
-from src.handlers import commands, interactions
+from src.handlers import commands, dm_flow
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -26,15 +26,18 @@ def on_event(event: dict[str, Any], client: zulip.Client) -> None:
 
     content = _MENTION_RE.sub("", message.get("content", "")).strip()
     message = {**message, "content": content}
-    log.debug("Message de %s : %s", message.get("sender_email"), content[:80])
+    log.debug("Message de %s (%s) : %s",
+              message.get("sender_email"), message.get("type"), content[:80])
 
-    if interactions.is_interaction(message):
+    # DM : si une session est active pour cet utilisateur, on la traite en priorité
+    if message.get("type") == "private" and dm_flow.has_session(message["sender_email"]):
         try:
-            interactions.handle(message, client)
+            dm_flow.handle(message, client)
         except Exception:
-            log.exception("Erreur interaction")
+            log.exception("Erreur dm_flow")
         return
 
+    # Tout le reste → commandes
     try:
         commands.handle(message, client)
     except Exception:
