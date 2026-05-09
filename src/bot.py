@@ -4,7 +4,7 @@ from typing import Any
 
 import zulip
 
-from src import config
+from src import config, healthcheck
 from src.handlers import commands, dm_flow
 
 logging.basicConfig(
@@ -51,6 +51,7 @@ def main() -> None:
         api_key=config.ZULIP_API_KEY,
         site=config.ZULIP_SITE,
     )
+    healthcheck.start(client)
     client.call_on_each_message(
         lambda msg: on_event({"type": "message", "message": msg}, client)
     )
