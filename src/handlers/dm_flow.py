@@ -65,6 +65,14 @@ def start(
         days=days,
     )
 
+    if msg_type == "stream":
+        del_result = client.call_endpoint(
+            url=f"messages/{trigger['id']}",
+            method="DELETE",
+        )
+        if del_result.get("result") != "success":
+            log.warning("Suppression message %d impossible : %s", trigger["id"], del_result)
+
     response = forms.recent_files_form(files, days)
     result = client.send_message({
         "type": "private",
@@ -117,15 +125,6 @@ def _validate(user_email: str, session: DMSession, client: zulip.Client) -> None
 
     result = client.send_message(payload)
     log.debug("Post vers origine : %s", result)
-
-    if session.origin_type == "stream":
-        del_result = client.call_endpoint(
-            url=f"messages/{session.origin_message_id}",
-            method="DELETE",
-        )
-        if del_result.get("result") != "success":
-            log.warning("Suppression message %d impossible : %s",
-                        session.origin_message_id, del_result)
 
     msg_link = _message_link(session, result.get("id"))
     del _sessions[user_email]
