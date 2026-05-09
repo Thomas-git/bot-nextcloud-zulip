@@ -43,9 +43,7 @@ def start(
     user_email = trigger["sender_email"]
 
     if user_email in _sessions:
-        _dm_send(user_email, client,
-                 "Vous avez déjà une sélection en cours. Tapez `annuler` d'abord.")
-        return
+        del _sessions[user_email]
 
     if not files:
         _dm_send(user_email, client,
