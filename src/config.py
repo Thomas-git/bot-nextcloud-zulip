@@ -19,8 +19,4 @@ NEXTCLOUD_URL = _require("NEXTCLOUD_URL").rstrip("/")
 NEXTCLOUD_USER = _require("NEXTCLOUD_USER")
 NEXTCLOUD_PASSWORD = _require("NEXTCLOUD_PASSWORD")
 
-WEBHOOK_HOST = os.getenv("WEBHOOK_HOST", "0.0.0.0")
-WEBHOOK_PORT = int(os.getenv("WEBHOOK_PORT", "5000"))
-WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "")
-
 RECENT_DAYS = int(os.getenv("RECENT_DAYS", "7"))
