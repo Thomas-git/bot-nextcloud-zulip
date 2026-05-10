@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 from typing import Any
 
 import zulip
@@ -47,6 +48,10 @@ def on_event(event: dict[str, Any], client: zulip.Client) -> None:
         log.exception("Erreur commande")
 
 
+_RECONNECT_DELAY_MIN = 5
+_RECONNECT_DELAY_MAX = 300  # 5 minutes
+
+
 def main() -> None:
     log.info("Démarrage du bot Nextcloud-Zulip sur %s", config.ZULIP_SITE)
     client = zulip.Client(
@@ -55,9 +60,32 @@ def main() -> None:
         site=config.ZULIP_SITE,
     )
     healthcheck.start(client)
-    client.call_on_each_message(
-        lambda msg: on_event({"type": "message", "message": msg}, client)
-    )
+
+    delay = _RECONNECT_DELAY_MIN
+    while True:
+        try:
+            log.info("Connexion à Zulip...")
+            started_at = time.monotonic()
+            client.call_on_each_message(
+                lambda msg: on_event({"type": "message", "message": msg}, client)
+            )
+            # call_on_each_message est censé être bloquant indéfiniment ;
+            # s'il retourne sans exception, on reconnecte immédiatement
+            delay = _RECONNECT_DELAY_MIN
+        except KeyboardInterrupt:
+            log.info("Arrêt du bot.")
+            break
+        except Exception:
+            elapsed = time.monotonic() - started_at
+            if elapsed > 60:
+                # La connexion était stable : on repart vite
+                delay = _RECONNECT_DELAY_MIN
+            log.exception(
+                "Connexion Zulip interrompue (durée %.0fs). Nouvelle tentative dans %ds.",
+                elapsed, delay,
+            )
+            time.sleep(delay)
+            delay = min(delay * 2, _RECONNECT_DELAY_MAX)
 
 
 if __name__ == "__main__":

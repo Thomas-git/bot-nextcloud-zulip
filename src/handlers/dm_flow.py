@@ -112,23 +112,31 @@ def handle(message: dict[str, Any], client: zulip.Client) -> None:
 
 
 def _validate(user_email: str, session: DMSession, client: zulip.Client) -> None:
-    selected_files = [session.files[i] for i in session.selected]
-    payload: dict[str, Any] = {
-        "type": session.origin_type,
-        "content": forms.origin_message(session.origin_user_name, selected_files),
-    }
-    if session.origin_type == "stream":
-        payload["to"] = session.origin_to
-        payload["topic"] = session.origin_topic
-    else:
-        payload["to"] = session.origin_to
+    try:
+        selected_files = [session.files[i] for i in session.selected]
+        payload: dict[str, Any] = {
+            "type": session.origin_type,
+            "content": forms.origin_message(session.origin_user_name, selected_files),
+        }
+        if session.origin_type == "stream":
+            payload["to"] = session.origin_to
+            payload["topic"] = session.origin_topic
+        else:
+            payload["to"] = session.origin_to
 
-    result = client.send_message(payload)
-    log.debug("Post vers origine : %s", result)
+        result = client.send_message(payload)
+        log.debug("Post vers origine : %s", result)
 
-    msg_link = _message_link(session, result.get("id"))
-    del _sessions[user_email]
-    _dm_send(user_email, client, f"✓ Fichiers liés dans la [conversation]({msg_link}).")
+        msg_link = _message_link(session, result.get("id"))
+        _dm_send(user_email, client, f"✓ Fichiers liés dans la [conversation]({msg_link}).")
+    except Exception:
+        log.exception("Erreur lors de la validation pour %s", user_email)
+        try:
+            _dm_send(user_email, client, "Une erreur est survenue, veuillez réessayer.")
+        except Exception:
+            log.exception("Impossible d'envoyer le message d'erreur à %s", user_email)
+    finally:
+        _sessions.pop(user_email, None)
 
 
 def _message_link(session: DMSession, message_id: int | None) -> str:
