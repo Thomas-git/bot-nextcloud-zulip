@@ -65,7 +65,7 @@ def start(
         days=days,
     )
 
-    if msg_type == "stream":
+    if msg_type == "stream" and config.ALLOW_MESSAGE_DELETE:
         del_result = client.call_endpoint(
             url=f"messages/{trigger['id']}",
             method="DELETE",
@@ -94,7 +94,9 @@ def handle(message: dict[str, Any], client: zulip.Client) -> None:
     if content.startswith(_LINK_PREFIX):
         path = content[len(_LINK_PREFIX):]
         idx = next((i for i, f in enumerate(session.files) if f.path == path), None)
-        if idx is not None and idx not in session.selected:
+        if idx is None:
+            log.warning("Chemin non reconnu dans link_file de %s : %s", user_email, path)
+        elif idx not in session.selected:
             session.selected.append(idx)
             log.debug("Sélection : %s", path)
         return

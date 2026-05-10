@@ -27,7 +27,10 @@ def on_event(event: dict[str, Any], client: zulip.Client) -> None:
         return
 
     message = event["message"]
-    if message.get("sender_email") == config.ZULIP_EMAIL:
+    sender = message.get("sender_email", "")
+
+    # Ignore notre propre bot et tous les autres bots Zulip
+    if sender == config.ZULIP_EMAIL or message.get("sender_is_bot"):
         return
 
     content = _MENTION_RE.sub("", message.get("content", "")).strip()

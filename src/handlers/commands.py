@@ -22,6 +22,13 @@ USAGE = """\
 
 
 def handle(message: dict[str, Any], client: zulip.Client) -> None:
+    # Vérifie que le canal est autorisé (streams uniquement ; les DMs passent toujours)
+    if message.get("type") == "stream" and config.AUTHORIZED_STREAMS:
+        stream = message.get("display_recipient", "")
+        if stream not in config.AUTHORIZED_STREAMS:
+            log.warning("Canal non autorisé ignoré : %s", stream)
+            return
+
     content: str = message.get("content", "").strip()
     args = content.split()
 
