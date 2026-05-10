@@ -8,10 +8,15 @@ from src import config, healthcheck
 from src.handlers import commands, dm_flow
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=getattr(logging, config.LOG_LEVEL, logging.INFO),
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 log = logging.getLogger(__name__)
+
+# Bibliothèques tierces bavardes : silencieuses sauf en DEBUG
+if config.LOG_LEVEL != "DEBUG":
+    for _noisy in ("urllib3", "zulip", "requests"):
+        logging.getLogger(_noisy).setLevel(logging.WARNING)
 
 _MENTION_RE = re.compile(r"^@\*\*[^*]+\*\*\s*")
 
@@ -29,7 +34,6 @@ def on_event(event: dict[str, Any], client: zulip.Client) -> None:
     log.debug("Message de %s (%s) : %s",
               message.get("sender_email"), message.get("type"), content[:80])
 
-    # DM : si une session est active pour cet utilisateur, on la traite en priorité
     if message.get("type") == "private" and dm_flow.has_session(message["sender_email"]):
         try:
             dm_flow.handle(message, client)
@@ -37,7 +41,6 @@ def on_event(event: dict[str, Any], client: zulip.Client) -> None:
             log.exception("Erreur dm_flow")
         return
 
-    # Tout le reste → commandes
     try:
         commands.handle(message, client)
     except Exception:

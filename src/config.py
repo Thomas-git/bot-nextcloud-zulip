@@ -20,3 +20,5 @@ NEXTCLOUD_USER = _require("NEXTCLOUD_USER")
 NEXTCLOUD_PASSWORD = _require("NEXTCLOUD_PASSWORD")
 
 RECENT_DAYS = int(os.getenv("RECENT_DAYS", "7"))
+
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
